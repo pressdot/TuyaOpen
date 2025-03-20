@@ -1,11 +1,11 @@
 platforms:
 - name: t2
   repo: https://github.com/tuya/TuyaOpen-T2
-  commit: master
+  commit: v1.2.0
 
 - name: t3
   repo: https://github.com/tuya/TuyaOpen-T3
-  commit: master
+  commit: v1.2.0
 
 - name: ubuntu
   repo: https://github.com/tuya/TuyaOpen-ubuntu
@@ -13,11 +13,11 @@ platforms:
 
 - name: t5ai
   repo: https://github.com/tuya/TuyaOpen-T5AI.git
-  commit: master
+  commit: v1.2.0
 
 - name: esp32
   repo: https://github.com/tuya/TuyaOpen-esp32
-  commit: master
+  commit: v1.2.0
   chip:
     - esp32
     - esp32c3
@@ -25,7 +25,7 @@ platforms:
 
 - name: ln882h
   repo: https://github.com/tuya/TuyaOpen-ln882h
-  commit: master
+  commit: v1.2.0
 
 - name: bk7231x
   repo: https://github.com/tuya/TuyaOpen-bk7231x
