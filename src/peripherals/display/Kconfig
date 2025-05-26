@@ -1,6 +1,7 @@
 config ENABLE_DISPLAY_DRIVER
+    depends on ENABLE_LIBLVGL && !ENABLE_PLATFORM_LVGL
     bool "enable display driver"
-    default n
+    default y
 
 if (ENABLE_DISPLAY_DRIVER)
     config DISPLAY_LCD_WIDTH
