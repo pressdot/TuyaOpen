@@ -1,9 +1,10 @@
 ---
 title: Windows 系统下 tos.py 工具使用指南
 ---
+
 ## 概述
 
-`tos.py` 是 TuyaOpen 的构建工具，支持项目创建、编译、配置等多种功能。本文档将指导您在 Windows 10/11 系统下安装和配置 tos.py 工具。并且顺利的开展开发调试工作。
+`tos.py` 是 TuyaOpen 的构建工具，支持项目创建、编译、配置等多种功能。本文档将指导您在 Windows 10/11 系统下使用 tos.py 工具进行开发调试。
 
 ### 功能特点
 - 支持项目创建和编译
@@ -14,133 +15,71 @@ title: Windows 系统下 tos.py 工具使用指南
 
 ## 前提条件
 
-在开始安装之前，请确保您的系统满足以下要求：
+在开始使用之前，请确保您的系统满足以下要求：
 - Windows 10/11 操作系统
-- Python 3.10.0 或更高版本
-- Git 2.0.0 或更高版本
-- CMake 3.16.0 或更高版本
-- Ninja 1.6.0 或更高版本
+- Python 3.10.0 或更高版本 [https://apps.microsoft.com/detail/9pjpw5ldxlz5]
+   - Windows Store App 商城下载安装
+- Git 2.0.0 或更高版本 [https://git-scm.com/downloads/win]
+   - 下载安装包，手动进行安装
+- CMake 3.16.0 或更高版本 [https://cmake.org/download/]
+   - 下载安装包，手动进行安装
+- Ninja 1.12.0 或更高版本 [https://github.com/ninja-build/ninja/releases]
+   - Ninja 安装说明
+      1. 下载 Ninja
+         - 访问 [Ninja 发布页面](https://github.com/ninja-build/ninja/releases)
+         - 下载最新版本的 `ninja-win.zip`
+
+      2. 安装步骤
+         - 解压下载的 `ninja-win.zip` 文件
+         - 将解压出的 `ninja.exe` 复制到以下任一位置：
+         - `C:\Windows`（需要管理员权限）
+         - 或添加到系统环境变量 Path 中的任意目录
+         - 或直接放在 TuyaOpen 项目根目录下
+
+      3. 验证安装
+         ```powershell
+         ninja --version
+         ```
+
+      :::tip 提示
+      
+      - 如果选择将 ninja.exe 放在项目目录下，确保在运行 `export.bat` 时 ninja.exe 已经存在
+      - 建议将 ninja.exe 放在系统目录或添加到环境变量中，这样可以全局使用  
+
+      :::
 
 ## 使用限制
 :::tip  
-
 2025/05/30 目前 Windows 开发环境下的 tos.py 工具暂时只支持 ESP32。 Tuya T5 芯片 计划`6月中`支持
-
 :::
 
-
-## 环境准备
-
-1. 安装 Python
-   - 访问 [Python 官网](https://www.python.org/downloads/) 下载并安装 Python 3.10.0 或更高版本
-   - 安装时请勾选"Add Python to PATH"选项
-
-2. 安装 Git
-   - 访问 [Git 官网](https://git-scm.com/download/win) 下载并安装 Git
-   - 安装时选择默认选项即可
-
-## 环境变量说明
-
-### 系统环境变量
-系统环境变量用于配置全局工具路径，包括：
-- Python 安装路径
-- Git 安装路径
-- CMake 安装路径
-- Ninja 安装路径
-- TuyaOpen 项目路径
-
-#### 虚拟环境（推荐使用）
-强烈建议使用 Python 虚拟环境，原因如下：
-1. 隔离依赖：避免与系统 Python 包冲突
-2. 版本控制：确保使用特定版本的依赖包
-3. 环境一致性：便于在不同机器上复制相同的开发环境
-4. 避免权限问题：不需要管理员权限即可安装包
-
-#### 不使用虚拟环境的风险
-如果直接使用系统 Python 环境：
-1. 可能与其他项目的依赖包版本冲突
-2. 需要管理员权限安装包
-3. 难以管理不同项目的依赖版本
-4. 系统 Python 环境可能被污染
-
----
-
-## 操作步骤
-
-### PowerShell 方式
+## 快速开始
 
 1. 克隆 TuyaOpen 仓库
 ```powershell
 git clone https://github.com/tuya/TuyaOpen.git
+cd TuyaOpen
 ```
 
-2. 创建并激活 Python 虚拟环境
+2. 配置开发环境
 ```powershell
-python -m venv my-venv
-.\my-venv\Scripts\Activate.ps1
+# 进入开发环境
+.\export.bat
+
+# 验证环境
+tos.py version
 ```
 
-3. 安装依赖包
+3. 退出开发环境
 ```powershell
-pip install -r requirements.txt
-```
-
-4. 设置环境变量
-   - 打开 PowerShell 并执行以下命令（需要管理员权限）：
-      ```powershell
-      [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\path\to\TuyaOpen", [EnvironmentVariableTarget]::Machine)
-      ```
-   - 或者通过图形界面设置：
-     - 按 Win + X，选择"系统"
-     - 点击"高级系统设置"
-     - 点击"环境变量"
-     - 在"系统变量"的 Path 中添加 TuyaOpen 目录的完整路径
-
-5. 验证安装
-```powershell
-python tos.py version
-```
-
-### Windows Git Bash 方式
-
-1. 克隆 TuyaOpen 仓库
-```bash
-git clone https://github.com/tuya/TuyaOpen.git
-```
-
-2. 创建并激活 Python 虚拟环境
-```bash
-python -m venv my-venv
-source my-venv/Scripts/activate
-```
-
-3. 安装依赖包
-```bash
-pip install -r requirements.txt
-```
-
-4. 设置环境变量
-   - 打开 Git Bash 并执行：
-```bash
-echo 'export PATH=$PATH:/c/path/to/TuyaOpen' >> ~/.bashrc
-source ~/.bashrc
-```
-   - 或者通过 Windows 系统设置：
-     - 按 Win + X，选择"系统"
-     - 点击"高级系统设置"
-     - 点击"环境变量"
-     - 在"系统变量"的 Path 中添加 TuyaOpen 目录的完整路径
-
-5. 验证安装
-```bash
-python tos.py version
+exit
 ```
 
 ## 使用说明
 
 ### 基本命令
 ```shell
-python tos.py [OPTIONS] COMMAND [ARGS]...
+tos.py [OPTIONS] COMMAND [ARGS]...
 
 选项:
   -d, --debug  显示调试信息
@@ -160,23 +99,37 @@ python tos.py [OPTIONS] COMMAND [ARGS]...
 
 1. 检查环境
 ```shell
-python tos.py check
+tos.py check
 ```
+- 确保工具链符合要求。如果有缺失工具，参照此文档上述方法进行安装。
+   ```powershell
+   (tos) $ tos.py check
+   [INFO]: Running tos.py ...
+   [INFO]: [git] (2.49.0 >= 2.0.0) is ok.
+   [ERROR]: [cmake] not found, please install.
+   [INFO]: [ninja] (1.12.1 >= 1.6.0) is ok.
+   [INFO]: Downloading submoudules ...
+   [INFO]: Download submoudules successfully.
+   ```
 
-2. 构建项目
+2. 编译项目
 ```shell
-python tos.py build
+# 工程目录下
+tos.py build
 ```
 
 3. 清理项目
 ```shell
-python tos.py clean
+# 工程目录下
+tos.py clean
 ```
 
 ## 常见问题
 
-1. 问题：找不到 Python 命令
-   解决方案：确保 Python 已添加到系统环境变量中
+1. 问题：找不到 tos.py 命令
+   解决方案：
+   - 确保已经执行 `.\export.bat` 进入开发环境
+   - 检查是否在 TuyaOpen 目录下
 
 2. 问题：pip 安装依赖包失败
    解决方案：
@@ -186,34 +139,8 @@ python tos.py clean
      pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
      ```
 
-3. 问题：环境变量设置后命令仍不可用
-   解决方案：
-   - 重新打开命令提示符或 PowerShell
-   - 检查环境变量路径是否正确
-
-4. 问题：虚拟环境激活失败
-   解决方案：
-   - PowerShell 中执行：
-     ```powershell
-     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-     ```
-   - Git Bash 中检查路径是否正确：
-     ```bash
-     ls -la my-venv/Scripts/activate
-     ```
-
-5. 问题：依赖包安装权限不足
-   解决方案：
-   - 使用虚拟环境（推荐）
-   - 或使用管理员权限运行命令提示符
-   - 或使用 `--user` 选项安装：
-     ```shell
-     pip install --user -r requirements.txt
-     ```
-
 ## 后续操作
 - 查看 [项目示例](../examples/index.md) 了解更多使用场景，开始编译项目。
 
 
-
-<!-- todo：其他新增文档，“用tos 创建新项目”-->
+<!-- todo：其他新增文档，"用tos 创建新项目"-->
