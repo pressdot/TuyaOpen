@@ -24,7 +24,7 @@ title: Windows 系统下 tos.py 工具使用指南
 ## 使用限制
 :::tip  
 
-2025/05/30 目前 Windows 开发环境下的 tos.py 工具暂时只支持 ESP32。 Tuya T5 芯片 6月中计划支持
+2025/05/30 目前 Windows 开发环境下的 tos.py 工具暂时只支持 ESP32。 Tuya T5 芯片 计划`6月中`支持
 
 :::
 
