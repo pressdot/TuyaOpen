@@ -21,9 +21,9 @@ title: Windows 系统下 tos.py 工具使用指南
    - Windows Store App 商城下载安装
 - Git 2.0.0 或更高版本 [https://git-scm.com/downloads/win]
    - 下载安装包，手动进行安装
-- CMake 3.16.0 或更高版本 [https://cmake.org/download/]
+- CMake 4.0.2 或更高版本 [https://cmake.org/download/]
    - 下载安装包，手动进行安装
-- Ninja 1.12.0 或更高版本 [https://github.com/ninja-build/ninja/releases]
+- Ninja 1.11.1 或更高版本 [https://github.com/ninja-build/ninja/releases]
    - Ninja 安装说明
       1. 下载 Ninja
          - 访问 [Ninja 发布页面](https://github.com/ninja-build/ninja/releases)
@@ -42,7 +42,7 @@ title: Windows 系统下 tos.py 工具使用指南
          ```
 
       :::tip 提示
-      
+
       - 如果选择将 ninja.exe 放在项目目录下，确保在运行 `export.bat` 时 ninja.exe 已经存在
       - 建议将 ninja.exe 放在系统目录或添加到环境变量中，这样可以全局使用  
 
@@ -57,23 +57,38 @@ title: Windows 系统下 tos.py 工具使用指南
 
 1. 克隆 TuyaOpen 仓库
 ```powershell
+# PowerShell 或 CMD
 git clone https://github.com/tuya/TuyaOpen.git
 cd TuyaOpen
+git submodule update --init
 ```
 
 2. 配置开发环境
 ```powershell
-# 进入开发环境
+# PowerShell 或 CMD
 .\export.bat
+```
 
-# 验证环境
+3. 验证环境
+```powershell
+# PowerShell 或 CMD
 tos.py version
 ```
 
-3. 退出开发环境
+4. 退出开发环境
 ```powershell
+# PowerShell 或 CMD
 exit
 ```
+
+:::tip 命令行选择
+您可以使用以下任意一种命令行工具：
+- PowerShell（推荐）
+- Windows 命令提示符（CMD）
+
+:::warning 注意
+Git Bash（类 Linux 环境）与 tos.py 工具不兼容，请使用 PowerShell 或 CMD。
+:::
 
 ## 使用说明
 
@@ -99,8 +114,10 @@ tos.py [OPTIONS] COMMAND [ARGS]...
 
 1. 检查环境
 ```shell
+# 工程目录下
 tos.py check
 ```
+
 - 确保工具链符合要求。如果有缺失工具，参照此文档上述方法进行安装。
    ```powershell
    (tos) $ tos.py check
@@ -110,7 +127,7 @@ tos.py check
    [INFO]: [ninja] (1.12.1 >= 1.6.0) is ok.
    [INFO]: Downloading submoudules ...
    [INFO]: Download submoudules successfully.
-   ```
+    ```
 
 2. 编译项目
 ```shell
@@ -123,6 +140,64 @@ tos.py build
 # 工程目录下
 tos.py clean
 ```
+
+4. 烧录固件
+```shell
+# 工程目录下
+tos.py flash
+```
+- 烧录流程
+   - 连接 USB 到开发板上的USB串口
+   - `tos.py flash` 运行串口烧写命令后：
+      - T5 复位按键
+      - ESP32  复位+Boot按键
+
+
+5. 配置项目 (芯片/功能等)
+   ```shell
+   # 工程目录下
+   tos.py config
+   ```
+   输出：
+   ```shell
+   Usage: tos.py config [OPTIONS] COMMAND [ARGS]...
+
+   Configuration file operation.
+
+   Options:
+   -h, --help  Show this message and exit.
+
+   Commands:
+   choice  Choice config file.
+   menu    Menuconfig.
+   save    Save minimal config.
+   ```
+
+   5.1. 配置芯片平台  
+      - TuyaOpen 支持了芯片跨平台能力，能快速切换兼容适配不同芯片平台。 
+      ```shell
+      # 工程目录下
+      tos.py config choice
+      ```
+      输出：
+      ```
+      [INFO]: Running tos.py ...
+      --------------------
+      1. BK7231X.config
+      2. ESP32-C3.config
+      3. ESP32-S3.config
+      4. ESP32.config
+      5. LN882H.config
+      6. T2.config
+      7. T3.config
+      8. T5AI.config
+      9. Ubuntu.config
+      --------------------
+      Input "q" to exit.
+      Choice config file:
+      ```
+
+
 
 ## 常见问题
 
