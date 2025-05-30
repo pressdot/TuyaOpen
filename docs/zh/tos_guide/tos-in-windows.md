@@ -1,10 +1,10 @@
 ---
-title: Windows 系统下 tos.py 工具使用指南
+title: Windows 开发指南
 ---
 
 ## 概述
 
-`tos.py` 是 TuyaOpen 的构建工具，支持项目创建、编译、配置等多种功能。本文档将指导您在 Windows 10/11 系统下使用 tos.py 工具进行开发调试。
+`tos.py` 是 TuyaOpen 的构建工具，支持项目创建、编译、配置等多种功能。本文档将指导您在 Windows 10/11 系统下使用 `tos.py` 工具进行TuyaOpen项目开发调试。
 
 ### 功能特点
 - 支持项目创建和编译
@@ -24,7 +24,8 @@ title: Windows 系统下 tos.py 工具使用指南
 - CMake 4.0.2 或更高版本 [https://cmake.org/download/]
    - 下载安装包，手动进行安装
 - Ninja 1.11.1 或更高版本 [https://github.com/ninja-build/ninja/releases]
-   - Ninja 安装说明
+   <details>
+   <summary>Ninja 安装说明</summary>
       1. 下载 Ninja
          - 访问 [Ninja 发布页面](https://github.com/ninja-build/ninja/releases)
          - 下载最新版本的 `ninja-win.zip`
@@ -32,21 +33,19 @@ title: Windows 系统下 tos.py 工具使用指南
       2. 安装步骤
          - 解压下载的 `ninja-win.zip` 文件
          - 将解压出的 `ninja.exe` 复制到以下任一位置：
-         - `C:\Windows`（需要管理员权限）
-         - 或添加到系统环境变量 Path 中的任意目录
-         - 或直接放在 TuyaOpen 项目根目录下
+           - `C:\Windows`（需要管理员权限）
+           - 或添加到系统环境变量 Path 中的任意目录
+           - 或直接放在 TuyaOpen 项目根目录下
 
       3. 验证安装
          ```powershell
          ninja --version
          ```
 
-      :::tip 提示
 
       - 如果选择将 ninja.exe 放在项目目录下，确保在运行 `export.bat` 时 ninja.exe 已经存在
       - 建议将 ninja.exe 放在系统目录或添加到环境变量中，这样可以全局使用  
-
-      :::
+      </details>
 
 ## 使用限制
 :::tip 提示
@@ -90,7 +89,7 @@ exit
 Git Bash（类 Linux 环境）与 tos.py 工具不兼容，请使用 PowerShell 或 CMD。
 :::
 
-## 使用说明
+## `tos.py` 使用说明
 
 ### 基本命令
 ```shell
