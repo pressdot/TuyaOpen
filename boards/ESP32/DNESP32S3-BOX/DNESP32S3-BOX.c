@@ -16,7 +16,7 @@
 #endif
 
 #include "board_config.h"
-#include "lcd_st7789.h"
+#include "lcd_st7789_80.h"
 #include "board_com_api.h"
 
 /***********************************************************
@@ -61,7 +61,7 @@ static OPERATE_RET __board_register_audio(void)
     cfg.es8311_addr = AUDIO_CODEC_ES8311_ADDR;
     cfg.dma_desc_num = AUDIO_CODEC_DMA_DESC_NUM;
     cfg.dma_frame_num = AUDIO_CODEC_DMA_FRAME_NUM;
-    cfg.defaule_volume = 80;
+    cfg.default_volume = 80;
 
 #if USE_8311
     TUYA_CALL_ERR_RETURN(tdd_audio_8311_codec_register(AUDIO_CODEC_NAME, cfg));
@@ -75,7 +75,7 @@ static OPERATE_RET __board_register_audio(void)
 
 /**
  * @brief Registers all the hardware peripherals (audio, button, LED) on the board.
- * 
+ *
  * @return Returns OPERATE_RET_OK on success, or an appropriate error code on failure.
  */
 OPERATE_RET board_register_hardware(void)
@@ -89,15 +89,15 @@ OPERATE_RET board_register_hardware(void)
 
 int board_display_init(void)
 {
-    return lcd_st7789_init();
+    return lcd_st7789_80_init();
 }
 
 void *board_display_get_panel_io_handle(void)
 {
-    return lcd_st7789_get_panel_io_handle();
+    return lcd_st7789_80_get_panel_io_handle();
 }
 
 void *board_display_get_panel_handle(void)
 {
-    return lcd_st7789_get_panel_handle();
+    return lcd_st7789_80_get_panel_handle();
 }

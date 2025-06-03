@@ -6,6 +6,7 @@
  */
 
 #include "tuya_cloud_types.h"
+#include "board_config.h"
 
 #include "tal_api.h"
 
@@ -13,7 +14,7 @@
 #include "tdd_audio_es8388_codec.h"
 #include "tdd_xl9555_io.h"
 
-#include "board_config.h"
+#include "lcd_st7789_spi.h"
 #include "board_com_api.h"
 
 /***********************************************************
@@ -53,11 +54,12 @@ static OPERATE_RET __board_register_audio(void)
         .dma_frame_num = AUDIO_CODEC_DMA_FRAME_NUM,
         .sample_rate = I2S_OUTPUT_SAMPLE_RATE,
     };
-    
+
     tdd_audio_codec_bus_i2c_new(bus_cfg, &i2c_bus_handle);
     tdd_audio_codec_bus_i2s_new(bus_cfg, &i2s_tx_handle, &i2s_rx_handle);
-    
-    /* P10, P11, P12, P13, and P14 are inputs, other pins are outputs --> 0001 1111 0000 0000 Note: 0 is output, 1 is input */
+
+    /* P10, P11, P12, P13, and P14 are inputs, other pins are outputs --> 0001 1111 0000 0000 Note: 0 is output, 1 is
+     * input */
     tdd_xl9555_io_init(i2c_bus_handle, 0xF003);
     /* Turn off buzzer */
     tdd_xl9555_io_set(BEEP_IO, 1);
@@ -73,8 +75,8 @@ static OPERATE_RET __board_register_audio(void)
         .mic_sample_rate = I2S_INPUT_SAMPLE_RATE,
         .spk_sample_rate = I2S_OUTPUT_SAMPLE_RATE,
         .es8388_addr = AUDIO_CODEC_ES8388_ADDR,
-        .pa_pin = -1, /* Speaker power is controled by XL9555 */
-        .defaule_volume = 80,
+        .pa_pin = -1, /* The speaker power is controlled by XL9555. */
+        .default_volume = 80,
     };
 
     TUYA_CALL_ERR_RETURN(tdd_audio_es8388_codec_register(AUDIO_CODEC_NAME, codec));
@@ -85,7 +87,7 @@ static OPERATE_RET __board_register_audio(void)
 
 /**
  * @brief Registers all the hardware peripherals (audio, button, LED) on the board.
- * 
+ *
  * @return Returns OPERATE_RET_OK on success, or an appropriate error code on failure.
  */
 OPERATE_RET board_register_hardware(void)
@@ -97,3 +99,17 @@ OPERATE_RET board_register_hardware(void)
     return rt;
 }
 
+int board_display_init(void)
+{
+    return lcd_st7789_spi_init();
+}
+
+void *board_display_get_panel_io_handle(void)
+{
+    return lcd_st7789_spi_get_panel_io_handle();
+}
+
+void *board_display_get_panel_handle(void)
+{
+    return lcd_st7789_spi_get_panel_handle();
+}
