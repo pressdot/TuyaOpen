@@ -547,7 +547,6 @@ OPERATE_RET ai_audio_agent_upload_start(uint8_t enable_vad)
 OPERATE_RET ai_audio_agent_upload_data(uint8_t *data, uint32_t len)
 {
     OPERATE_RET rt = OPRT_OK;
-    static bool is_first = true;
 
 #if defined(AI_AUDIO_DEBUG) && (AI_AUDIO_DEBUG == 1)
     ai_audio_debug_data((char *)data, len);
