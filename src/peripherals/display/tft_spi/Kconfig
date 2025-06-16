@@ -6,6 +6,9 @@ if (ENABLE_DISPLAY_LCD_SPI)
 
         config ENABLE_LCD_SPI_ST7789
             bool "st7789"
+        
+        config ENABLE_LCD_SPI_ST7305
+            bool "st7305"
 
         config ENABLE_LCD_SPI_GC9A01
             bool "gc9a01"
