@@ -312,7 +312,7 @@ OPERATE_RET ai_audio_player_init(void)
     TUYA_CALL_ERR_GOTO(tkl_thread_create_in_psram(&sg_player.thrd_hdl, \
                                                   "ai_player", \
                                                    1024 * 4,\
-                                                   THREAD_PRIO_2,
+                                                   THREAD_PRIO_1,
                                                    __ai_audio_player_task, NULL), __ERR);
 
     PR_DEBUG("app player init success");
