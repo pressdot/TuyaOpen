@@ -45,6 +45,11 @@ def check_platform_commit(repo_path, commit):
     if not os.path.exists(repo_path):
         logger.error(f"Not found {repo_path}")
         return False
+
+    if not commit:
+        # Maybe a newly created platform
+        return True
+
     dont_update_platform = params["dont_update_platform"]
     need_prompt = not os.path.exists(dont_update_platform)
 
@@ -53,7 +58,7 @@ def check_platform_commit(repo_path, commit):
         logger.warning(f"The commit required by the platform is {commit},")
         logger.warning(f"but currently {real_commit} is being used.")
         logger.info("Update the platform to the required commit?")
-        logger.note("Y(es) / N(o) / D(on't prompt again)")
+        logger.note("y(es) / n(o) / d(on't prompt again)")
         ret = input("input: ").upper()
         if ret == "Y":
             if not git_checkout(repo_path, commit):
@@ -79,8 +84,8 @@ def download_platform(platform):
     platforms_root = params["platforms_root"]
     platform_root = os.path.join(platforms_root, platform)
     platform_info = get_platform_info(platform)
-    repo = platform_info["repo"]
-    commit = platform_info["commit"]
+    repo = platform_info.get("repo", "")
+    commit = platform_info.get("commit", "")
 
     if os.path.exists(platform_root):
         logger.info(f"Platform [{platform}] is exists.")
