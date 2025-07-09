@@ -14,6 +14,7 @@ extern "C" {
 #endif
       
 #include "tuya_cloud_types.h"
+#include "tuya_common_types.h"
 
 #define SKILL_INFO_LEN 512
 

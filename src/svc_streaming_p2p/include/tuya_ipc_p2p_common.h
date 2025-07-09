@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 #include "tuya_cloud_types.h"
+#include "tuya_common_types.h"
 
 #define P2P_ID_LEN 25                /**P2P ID MAX LEN*/
 #define P2P_NAME_LEN 8               /**P2P NAME LEN*/
