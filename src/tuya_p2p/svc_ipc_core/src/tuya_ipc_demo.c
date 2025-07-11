@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include "tuya_cloud_types.h"
 
-char path[128] = {0};
+char path[512] = {0};
 unsigned char *video_buf = NULL;
 int file_size = 0;
 bool is_last_frame = FALSE;
@@ -52,7 +52,8 @@ void tuya_ipc_demo_end()
 
 void *video_thread(void *arg)
 {
-    snprintf(path, sizeof(path), "/home/zhangjiepeng/Code/Temp/demo_video.264");
+    getcwd(path, sizeof(path));
+    strcat(path, "/demo_video.264");
     fp = fopen(path, "rb");
     if (fp == NULL) {
         printf("cant not read aov file %s\n", path);
