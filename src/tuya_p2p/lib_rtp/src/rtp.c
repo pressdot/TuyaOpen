@@ -92,7 +92,7 @@ int rtp_rtcp_report(void *rtp, void *data, int bytes)
     int n;
     struct rtp_context *ctx = (struct rtp_context *)rtp;
 
-#pragma message("update we_sent flag")
+//#pragma message("update we_sent flag")
     // don't send packet in 2T
     // ctx->role = RTP_RECEIVER
 

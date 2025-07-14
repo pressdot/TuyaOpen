@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "tuya_error.h"
 
 #pragma pack(1)
 

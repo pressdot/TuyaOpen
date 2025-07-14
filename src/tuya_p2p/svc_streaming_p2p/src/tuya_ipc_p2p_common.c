@@ -317,11 +317,11 @@ OPERATE_RET tuya_ipc_check_p2p_auth_update(VOID)
     // configuration)
 
     BYTE_T *p_auth_str = NULL;
-    UINT_T auth_param_len = 0;
+    ULONG_T auth_param_len = 0;
     BYTE_T *p_type = NULL;
     INT_T p2p_type = 0;
     CHAR_T str_p2p_type[P2P_TYPE_LEN] = {0};
-    UINT_T p2p_type_len = 0;
+    ULONG_T p2p_type_len = 0;
     INT_T rtyCnt = 0;
     BOOL_T isNeedReLoad = FALSE;
 
@@ -411,7 +411,7 @@ STATIC BOOL_T sg_p2p_passwd_flag = FALSE;
 BOOL_T iot_permit_mqtt_connect_cb(VOID)
 {
     BYTE_T *old_pwd = NULL;
-    UINT_T old_pwd_len = 0;
+    ULONG_T old_pwd_len = 0;
     BYTE_T new_pwd[P2P_PASSWD_LEN + 1] = {0};
     cJSON *result = NULL;
     OPERATE_RET ret = 0;

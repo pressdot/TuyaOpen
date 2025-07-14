@@ -1,5 +1,4 @@
 #include "tuya_media_service_rtc.h"
-#include <errno.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -14,8 +13,6 @@
 #endif
 #include "ikcp.h"
 #include "mbedtls/aes.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
 #include "mbedtls/md.h"
 #include "tuya_log.h"
 #include "tuya_misc.h"
@@ -23,20 +20,12 @@
 #if (MBEDTLS_VERSION_NUMBER < 0x03000000)
 #include "mbedtls/certs.h"
 #endif
-#include "mbedtls/chacha20.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/error.h"
-#include "mbedtls/gcm.h"
-#include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/ssl_cookie.h"
 #include "mbedtls/timing.h"
-#include "mbedtls/version.h"
-#include "mbedtls/x509.h"
 #include "tuya_sdp.h"
-#include "pj_sdp.h"
 #include "pj_ice.h"
 #include "pj_sync_condition.h"
+#include <pjmedia/sdp.h>
 
 #define IKCP_PACKET_HEADER_SIZE       24
 #define TUYA_P2P_SEND_BUFFER_SIZE_MAX (800 * 1024)
@@ -247,6 +236,7 @@ void ice_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *buffer, pj_si
 
 tuya_p2p_rtc_session_t *ctx_session_create(rtc_session_cfg_t *cfg, rtc_state_e state, int32_t *err_code);
 void ctx_session_destroy(tuya_p2p_rtc_session_t *rtc);
+void ctx_session_channel_set_send_time(struct rtc_channel *chan);
 int ctx_session_channel_process_data(struct rtc_channel *chan, char *data, int len);
 int ctx_session_channel_process_pkt(void *user, int length, const char *input, char *output);
 int ctx_session_send_sdp(tuya_p2p_rtc_session_t *rtc, rtc_session_cfg_t *cfg); // For example, send Answer SDP
