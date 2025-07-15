@@ -1,6 +1,5 @@
 #include "tuya_sdp.h"
 #include "tuya_misc.h"
-//#include "tuya_pool.h"
 #include "tuya_log.h"
 #include <string.h>
 
@@ -929,7 +928,7 @@ int tuya_p2p_rtc_sdp_decode(rtc_sdp_t *sdp, char *buf)
     char *lasts = NULL;
     char *p = strtok_r(buf, "\r\n", &lasts);
     if (p == NULL) {
-        return TUYA_P2P_SUCCESS;
+        return 0;
     }
     char m = '0';
     while (1) {

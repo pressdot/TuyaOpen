@@ -301,7 +301,7 @@ int pj_sdp_token_url_parse(const char *token_url, const char *type, char **addr,
         return -1;
     }
 
-    char *paddr = token_url + strlen(type);
+    char *paddr = (char*)token_url + strlen(type);
     char *pport = NULL;
     int i;
     for (i = strlen(paddr); i > 0; i--) {
@@ -450,9 +450,9 @@ bool pj_ice_session_init(pj_ice_session_t *pIceSession, pj_ice_session_cfg_t *pC
                 pj_str_t pjstrServerHost;
                 pjstrServerHost.ptr = paddr;
                 pjstrServerHost.slen = addrlen;
-                printf("+ turn server: %.*s port:%d\n", pjstrServerHost.slen, pjstrServerHost.ptr, server_port);
+                printf("+ turn server: %.*s port:%d\n", (int)pjstrServerHost.slen, pjstrServerHost.ptr, server_port);
                 if (!is_ipv4(paddr) && !is_ipv6(paddr)) {
-                    printf("- turn: %.*s is domain, ignore connect\n", addrlen, paddr);
+                    printf("- turn: %.*s is domain, ignore connect\n", (int)addrlen, paddr);
                     continue;
                 }
                 /*pIceCfg->turn.server = pj_str((char*)serverHost.base);
@@ -471,9 +471,9 @@ bool pj_ice_session_init(pj_ice_session_t *pIceSession, pj_ice_session_cfg_t *pC
                 pj_str_t pjstrServerHost;
                 pjstrServerHost.ptr = paddr;
                 pjstrServerHost.slen = addrlen;
-                printf("+ stun server: %.*s port:%d\n", pjstrServerHost.slen, pjstrServerHost.ptr, server_port);
+                printf("+ stun server: %.*s port:%d\n", (int)pjstrServerHost.slen, pjstrServerHost.ptr, server_port);
                 if (!is_ipv4(paddr) && !is_ipv6(paddr)) {
-                    printf("- stun: %.*s is domain, ignore connect\n", pjstrServerHost.slen, pjstrServerHost.ptr);
+                    printf("- stun: %.*s is domain, ignore connect\n", (int)pjstrServerHost.slen, pjstrServerHost.ptr);
                     continue;
                 }
                 pj_strdup_with_null(pIceSession->pPool, &pIceCfg->stun.server, &pjstrServerHost);

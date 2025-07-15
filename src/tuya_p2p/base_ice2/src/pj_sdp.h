@@ -1,7 +1,7 @@
 #ifndef PJ_SDP_H_
 #define PJ_SDP_H_
 
-#include <pjmedia.h>
+#include <stdint.h>
 
 int pj_sdp_init(char *session_id, char *local_id, char *fingerprint, char *ufrag, char *password);
 int pj_sdp_deinit();

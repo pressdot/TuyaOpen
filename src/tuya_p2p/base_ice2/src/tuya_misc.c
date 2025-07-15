@@ -1,15 +1,12 @@
 #include "tuya_misc.h"
 #include <unistd.h>
 #include <fcntl.h>
-//#include "uv.h"
-#include "queue.h"
 #include "tuya_log.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <sys/time.h>
 #include "mbedtls/pk.h"
-#include "mbedtls/ecdsa.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509_crt.h"
@@ -21,123 +18,6 @@
 #define RTC_DEFAULT_TLS_CERT_MD           MBEDTLS_MD_SHA256
 #define RTC_DEFAULT_TLS_CERT_NOT_BEFORE   "20180101000000"
 #define RTC_DEFAULT_TLS_CERT_NOT_AFTER    "20351231235959"
-
-// int get_ai_type(struct sockaddr* ai_addr){
-//     static struct spec_ipv4_t{
-// 	    uint32_t addr;
-// 	    uint32_t mask;
-// 	    int	    type;
-//     } spec_ipv4[] = {
-// 	    { 0x7f000000, 0xFF000000, AI_LOOPBACK },
-// 	    { 0x00000000, 0xFF000000, AI_DISABLE },
-// 	    { 0xa9fe0000, 0xFFFF0000, AI_LINKLOCAL }
-//     };
-
-//     static struct spec_ipv6_t{
-// 	    uint8_t addr[16];
-// 	    uint8_t mask[16];
-// 	    int	   type;
-//     } spec_ipv6[] = {
-// 	    { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-// 	      {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-// 	      0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
-// 	      AI_LOOPBACK
-// 	    },
-// 	    { {0xfe,0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-// 	      {0xff,0xc0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-// 	      AI_LINKLOCAL
-// 	    },
-// 	    { {0x0,0x0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-// 	      { 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-// 	       0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
-// 	      AI_DISABLE
-// 	    }
-//     };
-
-//     if(ai_addr->sa_family == AF_INET){
-//         struct sockaddr_in* ai_addr_v4 = (struct sockaddr_in*)ai_addr;
-//         int i;
-//         for(i = 0; i < 3; ++i){
-//             uint32_t a = ntohl(ai_addr_v4->sin_addr.s_addr);
-//             uint32_t pa = spec_ipv4[i].addr;
-//             uint32_t pm = spec_ipv4[i].mask;
-//             if( (a & pm) == pa){
-//                 return spec_ipv4[i].type;
-//             }
-//         }
-//     }else{
-//         struct sockaddr_in6* ai_addr_v6 = (struct sockaddr_in6*)ai_addr;
-//         int i;
-//         for(i = 0; i < 3; ++i){
-//             uint8_t* a = ai_addr_v6->sin6_addr.s6_addr;
-//             uint8_t am[16];
-//             uint8_t *pa = spec_ipv6[i].addr;
-//             uint8_t *pm = spec_ipv6[i].mask;
-//             int k;
-//             for(k = 0; k < 16; ++k){
-//                 am[k] = (uint8_t)((a[k] & pm[k]) & 0xff);
-//             }
-//             if(memcmp(am, pa, 16) == 0){
-//                 return spec_ipv6[i].type;
-//             }
-//         }
-//     }
-//     return AI_NORMAL;
-// }
-
-// int tuya_p2p_check_system_ipv4_ipv6(int *has_ipv4, int *has_ipv6){
-//     tuya_p2p_log_debug("try check system support of ipv4/ipv6\n");
-//     *has_ipv4 = 0;
-//     *has_ipv6 = 0;
-
-//     tuya_uv_interface_address_t *addr = NULL;
-//     int count = 0;
-//     tuya_uv_interface_addresses(&addr, &count);
-//     int i;
-//     for(i=0; i<count; i++){
-//         tuya_uv_interface_address_t *paddr = &addr[i];
-//         struct sockaddr *p = (struct sockaddr *)&paddr->address;
-//         int ai_type = get_ai_type(p);
-//         if(ai_type == AI_NORMAL){
-//             if(p->sa_family == AF_INET){
-//                 *has_ipv4 = 1;
-//             }else if(p->sa_family == AF_INET6){
-//                 *has_ipv6 = 1;
-//             }
-//         }
-//     }
-
-//     tuya_p2p_log_info("system has ipv4(%s), has ipv6(%s)\n", *has_ipv4 ? "yes" : "no", *has_ipv6 ? "yes" : "no");
-//     tuya_uv_free_interface_addresses(addr, count);
-//     return 0;
-// }
-
-// int tuya_p2p_misc_is_ipv4(tuya_uv_buf_t *host) {
-//     char ip[64];
-//     snprintf(ip, sizeof(ip), "%.*s", (int)host->len, host->base);
-//     struct sockaddr_storage sa;
-//     return tuya_uv_inet_pton(AF_INET, ip, &sa) == 0;
-// }
-
-// int tuya_p2p_misc_is_ipv6(tuya_uv_buf_t *host){
-//     char ip[64];
-//     if (host->len > 2 && host->base[0] == '[' && host->base[host->len - 1] == ']') {
-//         snprintf(ip, sizeof(ip), "%.*s", (int)host->len - 2, host->base + 1);
-//     } else {
-//         snprintf(ip, sizeof(ip), "%.*s", (int)host->len, host->base);
-//     }
-//     struct sockaddr_storage sa;
-//     return tuya_uv_inet_pton(AF_INET6, ip, &sa) == 0;
-// }
-
-// int tuya_p2p_misc_is_ip(tuya_uv_buf_t *host){
-//     return tuya_p2p_misc_is_ipv4(host) || tuya_p2p_misc_is_ipv6(host);
-// }
-
-// void tuya_p2p_misc_release_tuya_uv_handle(tuya_uv_handle_t *handle){
-//     //TUYA_P2P_POOL_RELEASE(handle);
-//     free(handle);
-// }
 
 uint64_t tuya_uv_hrtime2(void)
 {

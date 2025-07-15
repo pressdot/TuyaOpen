@@ -17,9 +17,6 @@
 #include "tuya_iot_dp.h"
 #include "tal_cli.h"
 #include "tuya_authorize.h"
-#include "tuya_p2p_sdk.h"
-#include "tuya_ipc_p2p.h"
-#include "tuya_ipc_demo.h"
 #include <assert.h>
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
 #include "netconn_wifi.h"
@@ -105,23 +102,8 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 
     /* MQTT with tuya cloud is connected, device online */
     case TUYA_EVENT_MQTT_CONNECTED:
-    {
         PR_INFO("Device MQTT Connected!");
-        TUYA_IPC_SDK_VAR_S sdkVar = {0};
-        sdkVar.OnGetVideoFrameCallback = Demo_OnGetVideoFrameCallback;
-        sdkVar.OnGetAudioFrameCallback = NULL;
-        TUYA_APP_Start(&sdkVar);
-        tuya_ipc_demo_start();
         break;
-    }
-    case TUYA_EVENT_RTC_REQ:
-    {
-        cJSON *root_json = event->value.asJSON;
-        char* pRootJson = cJSON_PrintUnformatted(root_json);
-        printf("%s\n", pRootJson);
-        gw_p2p_mqtt_data_cb(root_json);
-        break;
-    }
 
     /* RECV upgrade request */
     case TUYA_EVENT_UPGRADE_NOTIFY:
@@ -259,7 +241,6 @@ void user_main()
     }
     // PR_DEBUG("uuid %s, authkey %s", license.uuid, license.authkey);
     /* Initialize Tuya device configuration */
-    OnIotInited();
     ret = tuya_iot_init(&client, &(const tuya_iot_config_t){
                                      .software_ver = PROJECT_VERSION,
                                      .productkey = TUYA_PRODUCT_ID,
@@ -267,7 +248,6 @@ void user_main()
                                      .authkey = license.authkey,
                                      .event_handler = user_event_handler_on,
                                      .network_check = user_network_check,
-                                     .skill_param = gw_active_get_ext_param(),
                                  });
     assert(ret == OPRT_OK);
 

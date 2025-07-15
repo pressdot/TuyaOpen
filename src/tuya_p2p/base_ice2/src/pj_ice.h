@@ -2,7 +2,6 @@
 #define PJ_ICE_H_
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <pjlib.h>
 #include <pjlib-util.h>
 #include <pjnath.h>
