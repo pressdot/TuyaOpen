@@ -6,14 +6,7 @@
 English | [简体中文](README_zh.md)
 
 ## Quick Links
-<p>
-  <a href="https://www.tuyaopen.ai/zh">
-    <button style="margin-right:10px;padding:8px 18px;background:#0078ff;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Official Site</button>
-  </a>
-  <a href="https://www.tuyaopen.ai/zh/docs/quick_start/enviroment-setup">
-    <button style="padding:8px 18px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Docs</button>
-  </a>
-</p>
+[🏠 Official Site](https://www.tuyaopen.ai) | [📄 Docs](https://www.tuyaopen.ai/docs/quick_start/enviroment-setup)
 
 
 ## Overview

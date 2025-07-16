@@ -6,14 +6,7 @@
 [English](https://github.com/tuya/TuyaOpen/blob/master/README.md) | 简体中文
 
 ## 快速链接
-<p>
-  <a href="https://www.tuyaopen.ai/zh">
-    <button style="margin-right:10px;padding:8px 18px;background:#0078ff;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:16px;">进入官网</button>
-  </a>
-  <a href="https://www.tuyaopen.ai/zh/docs/quick_start/enviroment-setup">
-    <button style="padding:8px 18px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:16px;">查看文档</button>
-  </a>
-</p>
+[🏠 官网](https://www.tuyaopen.ai/zh) | [📄 文档](https://www.tuyaopen.ai/zh/docs/quick_start/enviroment-setup)
 
 ## 简介
 
