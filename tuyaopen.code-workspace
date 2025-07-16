@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "T5_TuyaOS-3.11.2",
+			"path": "../tuya/Projects/T5_TuyaOS-3.11.2"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"tuya_cloud_types.h": "c",
+			"app_display.h": "c",
+			"tuya_iot_config.h": "c",
+			"ui_display.h": "c",
+			"lwip_init.h": "c",
+			"app_system_info.h": "c",
+			"app_chat_bot.h": "c",
+			"thread": "c",
+			"board_com_api.h": "c"
+		}
+	}
+}

@@ -75,6 +75,8 @@ void ui_set_assistant_msg_stream_start(void);
 void ui_set_assistant_msg_stream_data(const char *text);
 
 void ui_set_assistant_msg_stream_end(void);
+void ui_set_server_ip_text(const char *text);
+void ui_set_stm32_ip_text(const char *text);
 #endif
 
 #ifdef __cplusplus

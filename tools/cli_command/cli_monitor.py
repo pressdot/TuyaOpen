@@ -47,7 +47,7 @@ def get_monitor_cmd(using_data,
               type=str, default="",
               help="Target port.")
 @click.option('-b', '--baud',
-              type=int, default=0,
+              type=int, default=115200,
               help="Uart baud rate.")
 def cli(port, baud):
     logger = get_logger()

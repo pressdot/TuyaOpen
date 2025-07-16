@@ -46,6 +46,7 @@
 #include "ai_audio.h"
 #include "reset_netcfg.h"
 #include "app_system_info.h"
+#include "tal_network.h"
 
 /* Tuya device handle */
 tuya_iot_client_t ai_client;
@@ -56,8 +57,70 @@ tuya_iot_client_t ai_client;
 
 #define DPID_VOLUME 3
 
+#define TCP_SERVER_IP "192.168.50.239"
+#define TCP_SERVER_PORT 1234
+#define TY_IPADDR_ANY ((uint32_t)0x00000000UL)
 static uint8_t _need_reset = 0;
+char wlan_state=0; 
 
+static void wifi_event_callback(WF_EVENT_E event, void *arg)
+{
+    OPERATE_RET op_ret = OPRT_OK;
+    NW_IP_S sta_info;
+    memset(&sta_info, 0, SIZEOF(NW_IP_S));
+
+    PR_DEBUG("-------------event callback-------------");
+    switch (event) {
+        case WFE_CONNECTED:{
+            PR_DEBUG("connection succeeded!");
+            wlan_state = 1; // connected
+            /* output ip information */
+            op_ret = tal_wifi_get_ip(WF_STATION, &sta_info);
+            if (OPRT_OK != op_ret) {
+                PR_ERR("get station ip error");
+                            wlan_state = 0; // disconnected
+
+                return;
+            }
+
+#ifdef nwipstr                
+            if(IS_NW_IPV4_ADDR(&sta_info)) {
+                TAL_PR_NOTICE("gw: %s", sta_info.nwgwstr);
+                TAL_PR_NOTICE("ip: %s", sta_info.nwipstr);
+                TAL_PR_NOTICE("mask: %s", sta_info.nwmaskstr);
+            }else {
+                TAL_PR_NOTICE("ip: %s", sta_info.addr.ip6.ip);
+                TAL_PR_NOTICE("islinklocal: %d", sta_info.addr.ip6.islinklocal);
+            }
+#else 
+            PR_NOTICE("gw: %s", sta_info.gw);
+            PR_NOTICE("ip: %s", sta_info.ip);
+            PR_NOTICE("mask: %s", sta_info.mask);
+            UI_WIFI_STATUS_E wifi_status;
+            wifi_status = UI_WIFI_STATUS_GOOD;
+            app_display_send_msg(TY_DISPLAY_TP_NETWORK, (uint8_t *)&wifi_status, sizeof(UI_WIFI_STATUS_E));
+            app_display_send_msg(TY_DISPLAY_STM32_IP, (uint8_t *)&sta_info.ip, sizeof(sta_info.ip));
+
+#endif
+            break;
+            wlan_state = 1; // connected
+        }
+
+        case WFE_CONNECT_FAILED: {
+            PR_DEBUG("connection fail!");
+            wlan_state = 0; // disconnected
+            break;
+        }
+
+        case WFE_DISCONNECTED: {
+            PR_DEBUG("disconnect!");
+            wlan_state = 0; // disconnected
+
+            break;        
+        }
+       
+    }
+}
 /**
  * @brief user defined log output api, in this demo, it will use uart0 as log-tx
  *
@@ -254,6 +317,7 @@ bool user_network_check(void)
 void user_main(void)
 {
     int ret = OPRT_OK;
+    int listen_fd = -1, client_fd = -1, remote_fd = -1;
 
     //! open iot development kit runtim init
     cJSON_InitHooks(&(cJSON_Hooks){.malloc_fn = tal_malloc, .free_fn = tal_free});
@@ -339,11 +403,131 @@ void user_main(void)
     tkl_wifi_set_lp_mode(0, 0);
 
     reset_netconfig_check();
+while (1)
+{
+  if (wlan_state == 0) {
+        OPERATE_RET rt = OPRT_OK;   
+        PR_NOTICE("wlan_state is 0, connect to the wifi first");
+           /* Initialize the TuyaOS WiFi service */
+        AP_IF_S *ap_info;
+        uint32_t ap_info_nums;
+        int i = 0;
+        char info_ssid[50];
+
+        PR_NOTICE("------ wifi scan example start ------");
+
+        /*Scan WiFi information in the current environment*/
+        TUYA_CALL_ERR_GOTO(tal_wifi_all_ap_scan(&ap_info, &ap_info_nums), __EXIT);
+        PR_DEBUG("Scanf to %d wifi signals", ap_info_nums);
+        for(i = 0; i < 2; i++) {
+            strcpy((char *)info_ssid, (const char *)ap_info[i].ssid);
+            PR_DEBUG("channel:%d, ssid:%s", ap_info[i].channel, info_ssid);  
+        }
+
+        /*Release the acquired WiFi information in the current environment*/
+        TUYA_CALL_ERR_LOG(tal_wifi_release_ap(ap_info));
+        PR_NOTICE("------ wifi scan example end ------");   
+                // 派发“开始配网”事件，应用层可以根据此事件来闪灯
+        ai_audio_player_play_alert(AI_AUDIO_ALERT_NETWORK_CFG);
+
+
+
+        char connect_ssid[] = "Press@New";    // connect wifi ssid
+        char connect_passwd[] = "anu1@163.com";   // connect wifi password
+
+
+        PR_NOTICE("------ wifi station example start ------");
+
+        /*WiFi init*/
+        TUYA_CALL_ERR_GOTO(tal_wifi_init(wifi_event_callback), __EXIT);
+
+        /*Set WiFi mode to station*/
+        TUYA_CALL_ERR_GOTO(tal_wifi_set_work_mode(WWM_STATION), __EXIT);
+
+        /*STA mode, connect to WiFi*/
+        PR_NOTICE("\r\nconnect wifi ssid: %s, password: %s\r\n", connect_ssid, connect_passwd);
+        TUYA_CALL_ERR_LOG(tal_wifi_station_connect((int8_t *)connect_ssid, (int8_t *)connect_passwd));
+        tal_system_sleep(1000);  // 1s
+        continue;
+        }
+       else
+       {
+        TUYA_IP_ADDR_T remote_ip;
+        TUYA_ERRNO net_errno = 0;
+        char recv_buf[256] = {0};
+        char *client_ip_str = NULL;
+        uint16_t client_port = 0;
+
+        listen_fd = tal_net_socket_create(PROTOCOL_TCP);
+        if (listen_fd < 0) {
+            PR_ERR("create listen socket fail");
+            goto __EXIT;
+        }
+        tal_net_bind(listen_fd, TY_IPADDR_ANY, 4321);
+        tal_net_listen(listen_fd, 1);
+
+        PR_NOTICE("TCP server listening on port 4321...");
+
+        client_fd = tal_net_accept(listen_fd, &remote_ip, &client_port);
+        if (client_fd < 0) {
+            PR_ERR("accept fail");
+            goto __EXIT;
+        }
+        client_ip_str = tal_net_addr2str(remote_ip);
+        PR_NOTICE("Accepted client: %s:%d", client_ip_str, client_port);
+
+        // 2. 作为客户端连接远程服务器
+        remote_fd = tal_net_socket_create(PROTOCOL_TCP);
+        if (remote_fd < 0) {
+            PR_ERR("create remote socket fail");
+            goto __EXIT;
+        }
+        remote_ip = tal_net_str2addr(TCP_SERVER_IP);
+        PR_NOTICE("Connecting to remote server %s:%d...", TCP_SERVER_IP, TCP_SERVER_PORT);
+        app_display_send_msg(TY_DISPLAY_REMOTE_IP, (uint8_t *)&TCP_SERVER_IP, sizeof(TCP_SERVER_IP));
+
+        net_errno = tal_net_connect(remote_fd, remote_ip, TCP_SERVER_PORT);
+        if (net_errno < 0) {
+            PR_ERR("connect to remote server fail");
+            goto __EXIT;
+        }
+        PR_NOTICE("Connected to remote server.");
+        ai_audio_player_play_alert(AI_AUDIO_ALERT_NETWORK_CONNECTED);
 
     for (;;) {
         /* Loop to receive packets, and handles client keepalive */
-        tuya_iot_yield(&ai_client);
+      //  tuya_iot_yield(&ai_client);
+
+        memset(recv_buf, 0, 256);
+        net_errno = tal_net_recv(client_fd, recv_buf, 256);
+        if (net_errno > 0) {
+            PR_DEBUG("recv from local client: %s", recv_buf);
+            // 转发到远程服务器
+            if (tal_net_send(remote_fd, recv_buf, net_errno) < 0) {
+                PR_ERR("send to remote server fail");
+                break;
+            }
+            // 可选：回显给本地客户端
+            // tal_net_send(client_fd, recv_buf, net_errno);
+            if (0 == strcmp("stop", recv_buf)) {
+                break;
+            }
+        } else if (net_errno == 0) {
+            PR_NOTICE("local client closed connection");
+            break;
+        } else {
+            PR_ERR("recv from local client fail");
+            break;
+        }
     }
+    __EXIT:
+        if (client_fd >= 0) tal_net_close(client_fd);
+        if (listen_fd >= 0) tal_net_close(listen_fd);
+        if (remote_fd >= 0) tal_net_close(remote_fd);
+
+    }
+}
+
 }
 
 /**
