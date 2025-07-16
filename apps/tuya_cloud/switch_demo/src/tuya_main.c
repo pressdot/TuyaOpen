@@ -35,12 +35,13 @@
 
 #include "reset_netcfg.h"
 
+#if defined(ENABLE_QRCODE) && (ENABLE_QRCODE == 1)
+#include "qrencode_print.h"
+#endif
+
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "1.0.0"
 #endif
-
-/* for string to QRCode translate and print */
-extern void example_qrcode_string(const char *string, void (*fputs)(const char *str), int invert);
 
 /* for cli command register */
 extern void tuya_app_cli_init(void);
@@ -100,9 +101,11 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 
     /* Print the QRCode for Tuya APP bind */
     case TUYA_EVENT_DIRECT_MQTT_CONNECTED: {
+#if defined(ENABLE_QRCODE) && (ENABLE_QRCODE == 1)
         char buffer[255];
         sprintf(buffer, "https://smartapp.tuya.com/s/p?p=%s&uuid=%s&v=2.0", TUYA_PRODUCT_ID, license.uuid);
-        example_qrcode_string(buffer, user_log_output_cb, 0);
+        qrcode_string_output(buffer, user_log_output_cb, 0);
+#endif
     } break;
 
     /* MQTT with tuya cloud is connected, device online */
@@ -208,7 +211,7 @@ bool user_network_check(void)
     return status == NETMGR_LINK_DOWN ? false : true;
 }
 
-void user_main()
+void user_main(void)
 {
     int ret = OPRT_OK;
 
@@ -232,9 +235,12 @@ void user_main()
     });
     tal_sw_timer_init();
     tal_workq_init();
+
+#if !defined(PLATFORM_UBUNTU) || (PLATFORM_UBUNTU == 0)
     tal_cli_init();
     tuya_authorize_init();
     tuya_app_cli_init();
+#endif
 
     reset_netconfig_start();
 
