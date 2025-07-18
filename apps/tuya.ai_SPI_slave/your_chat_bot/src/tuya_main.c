@@ -41,7 +41,7 @@
 #endif
 
 #include "board_com_api.h"
-#include "tkl_spi.h"
+#include "tal_uart.h"
 #include "app_chat_bot.h"
 #include "ai_audio.h"
 #include "reset_netcfg.h"
@@ -59,6 +59,12 @@ tuya_iot_client_t ai_client;
 #define TCP_SERVER_IP "192.168.50.239"
 #define TCP_SERVER_PORT 1234
 #define TY_IPADDR_ANY ((uint32_t)0x00000000UL)
+
+// UART回环测试开关
+#define ENABLE_UART_LOOPBACK_TEST 0
+
+// 全局变量用于UART任务
+static int g_remote_fd = -1;
 static uint8_t _need_reset = 0;
 char wlan_state=0; 
 
@@ -300,6 +306,88 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 }
 
 /**
+ * @brief UART接收回调任务函数
+ * 
+ * @param args 任务参数
+ */
+void uart_rx_callback_task(void *args) {
+    char buff[256] = {0};
+    int read_uart_len;
+    
+    PR_NOTICE("UART RX callback task started");
+    
+    while(1) {
+        read_uart_len = tal_uart_get_rx_data_size(TUYA_UART_NUM_0);
+        if (read_uart_len > 0 && read_uart_len <= 256) {
+            // 串口收数据
+            int actual_read = tal_uart_read(TUYA_UART_NUM_0, (uint8_t *)buff, read_uart_len);
+            if (actual_read > 0) {
+                // 打印接收到的UART数据
+                PR_DEBUG("UART RX task received: %d bytes", actual_read);
+                
+                // 打印十六进制格式
+                PR_DEBUG("UART data (hex): ");
+                for (int i = 0; i < actual_read; i++) {
+                    PR_DEBUG_RAW("%02x ", (uint8_t)buff[i]);
+                }
+                PR_DEBUG_RAW("\n");
+                
+                // 如果是可打印字符，也打印ASCII格式
+                bool is_printable = true;
+                for (int i = 0; i < actual_read; i++) {
+                    if (buff[i] < 32 || buff[i] > 126) {
+                        is_printable = false;
+                        break;
+                    }
+                }
+                if (is_printable) {
+                    char ascii_str[257] = {0};
+                    memcpy(ascii_str, buff, actual_read);
+                    ascii_str[actual_read] = '\0';
+                    PR_DEBUG("UART data (ASCII): %s", ascii_str);
+                }
+                
+                // 如果TCP连接有效，转发数据到TCP服务器
+                if (g_remote_fd >= 0) {
+                    if (tal_net_send(g_remote_fd, (uint8_t *)buff, actual_read) >= 0) {
+                        PR_DEBUG("UART data forwarded to TCP server: %d bytes", actual_read);
+                    } else {
+                        PR_ERR("Failed to forward UART data to TCP server");
+                    }
+                }
+                
+                // 清空缓冲区
+                memset(buff, 0, sizeof(buff));
+            }
+        }
+       // PR_NOTICE("UART RX callback task called");
+        tal_system_sleep(20); // 20ms检查一次
+    }
+}
+
+/**
+ * @brief 创建UART接收任务
+ */
+OPERATE_RET create_uart_rx_task(void) {
+    OPERATE_RET ret = OPRT_OK;
+    THREAD_HANDLE uart_task_handle;
+    THREAD_CFG_T thread_cfg = {
+        .thrdname = "uart_rx_task",
+        .priority = THREAD_PRIO_3,  // 较高优先级
+        .stackDepth = 4096
+    };
+    
+    ret = tal_thread_create_and_start(&uart_task_handle, NULL, NULL, uart_rx_callback_task, NULL, &thread_cfg);
+    if (ret != OPRT_OK) {
+        PR_ERR("Failed to create UART RX task: %d", ret);
+        return ret;
+    }
+    
+    PR_NOTICE("UART RX task created successfully");
+    return OPRT_OK;
+}
+
+/**
  * @brief user defined network check callback, it will check the network every 1sec,
  *        in this demo it alwasy return ture due to it's a wired demo
  *
@@ -316,8 +404,7 @@ bool user_network_check(void)
 void user_main(void)
 {
     int ret = OPRT_OK;
-    int rt = OPRT_OK;
-    int  remote_fd = -1;
+    int remote_fd = -1;
 
 
     //! open iot development kit runtim init
@@ -340,7 +427,7 @@ void user_main(void)
     });
     tal_sw_timer_init();
     tal_workq_init();
-    tal_cli_init();
+    //tal_cli_init();
     tuya_authorize_init();
 
     reset_netconfig_start();
@@ -404,15 +491,24 @@ void user_main(void)
     tkl_wifi_set_lp_mode(0, 0);
 
     reset_netconfig_check();
-    TUYA_SPI_BASE_CFG_T spi_cfg = {.mode = TUYA_SPI_MODE0,
-                                   .freq_hz = SPI_FREQ,
-                                   .databits = TUYA_SPI_DATA_BIT8,
-                                   .bitorder = TUYA_SPI_ORDER_LSB2MSB,
-                                   .role = TUYA_SPI_ROLE_MASTER,
-                                   .type = TUYA_SPI_AUTO_TYPE,
-                                   .spi_dma_flags = 1
-                                };
-    TUYA_CALL_ERR_GOTO(tkl_spi_init(TUYA_SPI_NUM_1, &spi_cfg), __EXIT);
+    
+    // 初始化UART0用于数据通信
+    TAL_UART_CFG_T uart_cfg;
+    memset(&uart_cfg, 0, sizeof(TAL_UART_CFG_T));
+    uart_cfg.base_cfg.baudrate = 115200;
+    uart_cfg.base_cfg.databits = TUYA_UART_DATA_LEN_8BIT;
+    uart_cfg.base_cfg.parity = TUYA_UART_PARITY_TYPE_NONE;
+    uart_cfg.base_cfg.stopbits = TUYA_UART_STOP_LEN_1BIT;
+    uart_cfg.rx_buffer_size = 256;
+    uart_cfg.open_mode = O_BLOCK;
+    
+    ret = tal_uart_init(TUYA_UART_NUM_0, &uart_cfg);
+    if (ret != OPRT_OK) {
+        PR_ERR("uart init failed: %d", ret);
+        goto __EXIT;
+    }
+    PR_NOTICE("UART0 initialized successfully");
+
 while (1)
 {
   if (wlan_state == 0) {
@@ -462,9 +558,6 @@ while (1)
        {
         TUYA_IP_ADDR_T remote_ip;
         TUYA_ERRNO net_errno = 0;
-        uint8_t spi_snd_buf[] = {"Hello Tuya"};
-        uint8_t spi_rec_buf[256] = {"Hello Tuya"};
-        int spi_len = 0;
         remote_fd = tal_net_socket_create(PROTOCOL_TCP);
         if (remote_fd < 0) {
             PR_ERR("create remote socket fail");
@@ -482,30 +575,125 @@ while (1)
         PR_NOTICE("Connected to remote server.");
         ai_audio_player_play_alert(AI_AUDIO_ALERT_NETWORK_CONNECTED);
 
-        for (;;) {
-            // 从SPI读取数据
-            /*TUYA_CALL_ERR_LOG(tkl_spi_send(SPI_ID, spi_snd_buf, 8));
-            PR_NOTICE("spi send \"%s\" finish", spi_snd_buf);
-            TUYA_CALL_ERR_LOG(tkl_spi_recv(SPI_ID, spi_rec_buf, 8));
-            PR_NOTICE("spi rec \"%s\" finish", spi_rec_buf);*/
+        // 设置socket为非阻塞模式，避免在没有数据时阻塞
+        tal_net_set_block(remote_fd, FALSE);
+        
+        // 设置全局TCP socket句柄，供UART任务使用
+        g_remote_fd = remote_fd;
+        
+        // 创建UART接收任务
+        ret = create_uart_rx_task();
+        if (ret != OPRT_OK) {
+            PR_ERR("Failed to create UART RX task");
+            goto __EXIT;
+        }
 
-            TUYA_CALL_ERR_LOG(tkl_spi_transfer(TUYA_SPI_NUM_1, spi_snd_buf,spi_rec_buf, CNTSOF(spi_snd_buf)));
-             PR_NOTICE("spi send  \"%s\" rec \"%s\" finish",spi_snd_buf, spi_rec_buf);
-            spi_len = strlen((char*)spi_rec_buf);
-           // spi_len = board_spi_read((uint8_t *)spi_buf, sizeof(spi_buf));
-            if (spi_len > 0) {
-            PR_DEBUG("read from SPI: %d bytes", spi_len);
-            // 发送到远程服务器
-            if (tal_net_send(remote_fd, spi_rec_buf, spi_len) < 0) {
-                PR_ERR("send to remote server fail");
-                break;
+#if ENABLE_UART_LOOPBACK_TEST
+        // UART回环测试
+        PR_NOTICE("Starting UART loopback test...");
+        
+        // 发送测试数据到UART
+        const char test_message[] = "UART Loopback Test: Hello TuyaOpen!";
+        int test_msg_len = strlen(test_message);
+        uint8_t loopback_buf[256] = {0};
+        PR_NOTICE("Sending test message to UART: %s", test_message);
+        int sent_bytes = tal_uart_write(TUYA_UART_NUM_0, (const uint8_t *)test_message, test_msg_len);
+        if (sent_bytes > 0) {
+            
+            PR_NOTICE("UART test message sent: %d bytes", sent_bytes);
+            
+            // 等待一小段时间让数据通过回环
+           // tal_system_sleep(100);
+            
+            // 尝试读取回环数据
+         
+            int loopback_len = tal_uart_get_rx_data_size(TUYA_UART_NUM_0);
+            
+            if (loopback_len > 0) {
+                int read_bytes = tal_uart_read(TUYA_UART_NUM_0, loopback_buf, loopback_len);
+                if (read_bytes > 0) {
+                    PR_NOTICE("UART loopback received: %d bytes", read_bytes);
+                    
+                    // 将回环测试数据发送到TCP服务器
+                    if (tal_net_send(remote_fd, loopback_buf, read_bytes) >= 0) {
+                        PR_NOTICE("Loopback test data sent to TCP server successfully");
+                    } else {
+                        PR_ERR("Failed to send loopback test data to TCP server");
+                    }
+                    
+                    // 打印回环数据的十六进制格式
+                    PR_NOTICE("Loopback data (hex): ");
+                    for (int i = 0; i < read_bytes; i++) {
+                        PR_DEBUG_RAW("%02x ", loopback_buf[i]);
+                    }
+                    PR_DEBUG_RAW("\n");
+                } else {
+                    PR_WARN("Failed to read UART loopback data");
+                }
+            } else {
+                PR_WARN("No UART loopback data received (check physical loopback connection)");
             }
+        } else {
+            PR_NOTICE("Failed to send UART test message: %s", loopback_buf);
+            PR_ERR("Failed to send UART test message");
+        }
+        
+        PR_NOTICE("UART loopback test completed");
+#endif
+
+        for (;;) {
+            // UART数据接收现在由专门的任务处理
+            // 这里只处理从TCP服务器接收数据并发送到UART0
+            
+            uint8_t tcp_rec_buf[256] = {0};
+            int tcp_recv_len = tal_net_recv(remote_fd, tcp_rec_buf, sizeof(tcp_rec_buf));
+            
+            if (tcp_recv_len > 0) {
+                PR_DEBUG("Received from TCP server: %d bytes", tcp_recv_len);
+                
+                // 将TCP数据转发到UART
+                int uart_sent_len = tal_uart_write(TUYA_UART_NUM_0, tcp_rec_buf, tcp_recv_len);
+                if (uart_sent_len > 0) {
+                    PR_DEBUG("TCP data forwarded to UART0: %d bytes", uart_sent_len);
+                    
+                    // 打印接收到的TCP数据（十六进制格式）
+                    PR_DEBUG("TCP data (hex): ");
+                    for (int i = 0; i < tcp_recv_len; i++) {
+                        PR_DEBUG_RAW("%02x ", tcp_rec_buf[i]);
+                    }
+                    PR_DEBUG_RAW("\n");
+                    
+                    // 如果是可打印字符，也打印ASCII格式
+                    bool is_printable = true;
+                    for (int i = 0; i < tcp_recv_len; i++) {
+                        if (tcp_rec_buf[i] < 32 || tcp_rec_buf[i] > 126) {
+                            is_printable = false;
+                            break;
+                        }
+                    }
+                    if (is_printable) {
+                        char ascii_str[257] = {0};
+                        memcpy(ascii_str, tcp_rec_buf, tcp_recv_len);
+                        ascii_str[tcp_recv_len] = '\0';
+                        PR_DEBUG("TCP data (ASCII): %s", ascii_str);
+                    }
+                } else {
+                    PR_ERR("Failed to forward TCP data to UART0");
+                }
+            } else if (tcp_recv_len < 0) {
+                // 对于非阻塞socket，返回负值可能是正常的（没有数据可读）
+                // 只有在真正的连接错误时才退出循环
             }
+            // tcp_recv_len == 0 通常表示连接被对方关闭
+            
             tal_system_sleep(10); // 避免CPU占用过高
         }
         __EXIT:
          PR_ERR("failed");
+        // 清理全局TCP句柄
+        g_remote_fd = -1;
         if (remote_fd >= 0) tal_net_close(remote_fd);
+       // tal_uart_deinit(TUYA_UART_NUM_0);
     }
 
     }
